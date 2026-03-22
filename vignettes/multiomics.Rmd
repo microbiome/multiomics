@@ -1,0 +1,238 @@
+---
+title: "Introduction to multiomics R/Bioconductor package"
+output: 
+  BiocStyle::html_document:
+    self_contained: yes
+    toc: true
+    toc_float: true
+    toc_depth: 2
+    code_folding: show
+bibliography: bibliography.bib
+date: "`r doc_date()`"
+package: "`r pkg_ver('multiomics')`"
+vignette: >
+  %\VignetteIndexEntry{Introduction to multiomics}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}  
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>",
+    crop = NULL ## Related to https://stat.ethz.ch/pipermail/bioc-devel/2020-April/016656.html
+)
+```
+
+# Introduction
+
+In recent years, many different approaches to integrate multiomics data has
+been proposed. For instance, [@Mangnier2025] benchmarked different approaches
+to integrate metagenomics and metabolomics data, and evaluated different
+methods based on robustness and interpretability.
+
+In the publication, they proposed the following methods to address the following
+research questions:
+
+```{r table-methods, echo=FALSE}
+library(knitr)
+
+methods_table <- data.frame(
+    `Scientific question` = c(
+        "Is there any relationship between microorganisms and metabolites at a global level?",
+        "Are microbiome and metabolome datasets summarizable through a limited number of components?",
+        "Can we identify associations between metabolites and species?",
+        "Can we identify core microorganisms and metabolites?"
+    ),
+    `Research aim` = c(
+        "Global associations",
+        "Data summarization",
+        "Individual associations",
+        "Feature selection (univariate)"
+    ),
+    `Recommended method` = c(
+        "Mantel test",
+        "RDA",
+        "MiRKAT",
+        "CODA-LASSO (compositional covariates)"
+    ),
+    check.names = FALSE
+)
+
+kable(methods_table, caption = "Overview of multiomics statistical approaches")
+```
+
+The goal of the `multiomics` R/Bioconductor package is to implement these
+methods and more within the `MultiAssayExperiment` ecosystem, making them easily
+available in analysis workflows.
+
+# Workflow
+
+```{r "start", message=FALSE}
+library("multiomics")
+```
+
+## Installation
+
+To install `multiomics`, install `BiocManager` first, if it is not installed.
+Afterwards use the `install` function from `BiocManager`.
+
+```{r, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+    install.packages("BiocManager")
+}
+BiocManager::install("multiomics")
+```
+
+## Load `multiomics`
+
+```{r load-packages, message=FALSE, warning=FALSE}
+library("multiomics")
+```
+
+We use and example dataset from `mia` package.
+
+```{r load-data}
+library(mia)
+data("HintikkaXOData")
+mae <- HintikkaXOData
+
+# Replace missing values with 0
+assay(mae[[2]])[is.na(assay(mae[[2]]))] <- 0
+
+# Agglomerate microbiota data to Family level
+mae[[1]] <- agglomerateByRank(mae[[1]], rank = "Family")
+```
+
+We apply CLR transformation to microbiome data, and metabolites data is
+log-transformed.
+
+```{r transformation}
+# Apply CLR and log10
+mae[[1]] <- transformAssay(mae[[1]], assay.type = "counts", method = "rclr")
+mae[[2]] <- transformAssay(mae[[2]], assay.type = "nmr", method = "log10", pseudocount = 0.5)
+```
+
+
+## Is there any relationship between microorganisms and metabolites at a global level?
+
+To answer this question, we apply the Mantel test to CLR-transformed microbiome
+data and log-transformed metabolite data. This allows us to use Euclidean
+distances.
+
+```{r mantel}
+mantel <- getMantel(
+    mae,
+    experiments = c(1, 2),
+    assay.types = c("rclr", "log10"),
+    dist.methods = c("euclidean", "euclidean")
+)
+mantel
+```
+
+Based on the results, there is a significant association between microbiome and
+metabolite profiles.
+
+
+## Are microbiome and metabolome datasets summarizable through a limited number of components?
+
+This research question can be addressed by applying redundancy analysis (RDA).
+Note that this method is based on linear relationships, which requires using
+CLR-transformed data.
+
+```{r rda}
+rda <- getRDA(
+    mae,
+    experiments = c(1, 2),
+    assay.types = c("rclr", "log10")
+)
+rda
+```
+
+The results of RDA are usually visualized with a biplot.
+
+```{r show_rda}
+library(ggvegan)
+autoplot(rda)
+```
+
+Based on the results, 96\% of the microbiome variance can be explained by
+metabolites. More than 80\% of the variance is captured by the first components.
+
+## Can we identify associations between metabolites and species?
+
+Next, we continue with MiRKAT. The idea is to test the association of each
+metabolite with the microbiome profile.
+
+```{r mirkat}
+mirkat <- getMiRKAT(
+    mae,
+    experiments = c(1, 2),
+    assay.types = c("rclr", "log10"),
+    dist.methods = c("euclidean", "manhattan", "canberra")
+)
+mirkat |> head()
+```
+
+For instance, _rownames(mirkat)[ order(mirkat[["omnibus_p_adj"]]) ][[1L]]_ is
+strongly associated with the micrbiome.
+
+## Can we identify core microorganisms and metabolites?
+
+We can use LASSO to identify core taxa and metabolites by compressing the data.
+To follow the approach in [@Calle2023], we apply the method to log-ratio
+transformed data.
+
+```{r coda_lasso}
+coda_lasso <- getLASSO(
+    mae,
+    experiments = c(1, 2),
+    assay.types = c("counts", "log10"),
+    apply.logratio = TRUE
+)
+```
+
+To visualize these relationships, we use a heatmap of the coefficient matrix.
+Positive and negative coefficients indicate positive and negative associations.
+
+```{r show_coda_lasso}
+# Put into long format for ggplot
+library(tidyr)
+df_long <- coda_lasso |>
+    as.data.frame() |>
+    tibble::rownames_to_column("Taxa") |>
+    pivot_longer(
+        cols = -Taxa,
+        names_to = "Metabolite",
+        values_to = "Coefficient"
+    )
+
+library(ggplot2)
+ggplot(df_long, aes(x = Metabolite, y = Taxa, fill = Coefficient)) +
+    geom_tile() +
+    scale_fill_gradient2(
+        low = "blue",
+        mid = "white",
+        high = "red",
+        midpoint = 0
+    ) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+# Citing `multiomics`
+
+We hope that `r Biocpkg("multiomics")` will be useful for your research. Please
+use the following information to cite the package and the overall approach.
+Thank you!
+
+```{r citation}
+## Citation info
+citation("multiomics")
+```
+
+# `R` session information.
+
+```{r session_info}
+sessionInfo()
+```

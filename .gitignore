@@ -1,0 +1,11 @@
+.Rproj.user
+dev
+*.Rproj
+.Rhistory
+.RData
+.httr-oauth
+.DS_Store
+.quarto
+inst/doc
+vignettes/*.html
+vignettes/*.R
