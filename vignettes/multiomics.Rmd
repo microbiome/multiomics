@@ -96,7 +96,21 @@ We use and example dataset from `mia` package.
 library(mia)
 data("HintikkaXOData")
 mae <- HintikkaXOData
+```
 
+The dataset is provided as a `MultiAssayExperiment` (`MAE`) object, a container
+designed for managing multi-omics data. Individual omics datasets are stored as
+`(Tree)SummarizedExperiment` (`TreeSE`) objects, each representing a single
+omics layer. A key feature of the `MAE` object is that samples are linked
+across assays: a sample in one omics layer is associated with the
+corresponding sample in all other layers. This mapping enables automatic
+bookkeeping and ensures that samples remain correctly aligned during downstream
+analyses.
+
+Next we replace missing values with 0s in metabolomics layer and agglomerate
+microbiome data into Family level.
+
+```{r wrangle_data}
 # Replace missing values with 0
 assay(mae[[2]])[is.na(assay(mae[[2]]))] <- 0
 
@@ -153,7 +167,26 @@ The results of RDA are usually visualized with a biplot.
 
 ```{r show_rda}
 library(ggvegan)
-autoplot(rda)
+p <- ordiggplot(rda) +
+    geom_ordi_axis() +
+    geom_ordi_point("sites") +
+    geom_ordi_arrow("species")  +
+    geom_ordi_arrow("biplot")
+
+# Add coloring
+gb <- ggplot_build(p)
+
+sites <- dplyr::left_join(
+    gb$data[[3]],
+    colData(mae) |> as.data.frame(),
+    by = c("label" = "Sample")
+)
+
+p + geom_point(
+        data = sites,
+        aes(x, y, colour = Fat),
+        size = 3
+    )
 ```
 
 Based on the results, 96\% of the microbiome variance can be explained by
@@ -174,8 +207,19 @@ mirkat <- getMiRKAT(
 mirkat |> head()
 ```
 
+We can visualize the p-values for instance with a bar plot.
+
+```{r visualize_mirkat}
+ggplot(mirkat, aes(x = reorder(rownames(mirkat), desc(omnibus_p)), y = omnibus_p)) +
+    geom_col() +
+    coord_flip() +
+    theme_minimal() +
+    geom_hline(yintercept = 0.05, color = "red", linewidth = 1) +
+    labs(x = NULL, y = "omnibus p-value")
+```
+
 For instance, _rownames(mirkat)[ order(mirkat[["omnibus_p_adj"]]) ][[1L]]_ is
-strongly associated with the micrbiome.
+strongly associated with the microbiome.
 
 ## Can we identify core microorganisms and metabolites?
 
@@ -218,6 +262,45 @@ ggplot(df_long, aes(x = Metabolite, y = Taxa, fill = Coefficient)) +
     ) +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## Are there shared latent drivers in microbiome and metabolite data?
+
+Robust Joint RPCA identifies shared latent structure across datasets such as
+microbiome and metabolite profiles. It first learns a low-rank joint
+representation that captures shared sample-level factors while allowing
+dataset-specific loadings, reducing noise and improving robustness. PCA is then
+applied to the reconstructed representation to extract the main shared
+components for interpretation.
+
+```{r robust_joint_pca}
+# Apply data transformations. With impute=FALSE, missing values are preserved
+# and not imputed.
+mae[[1]] <- transformAssay(
+    mae[[1]], assay.type = "counts", method = "rclr", impute = FALSE,
+    name = "rclr_wo_imputation")
+
+# Run joint-RPCA
+res <- getJointRPCA(
+   mae,
+   experiments = c(1, 2),
+   assay.types = c("rclr_wo_imputation", "log10")
+)
+```
+
+The result can be visualize with a scatter plot similarly to regular PCA.
+
+```{r visualize_joint_rpca}
+res <- cbind(res, colData(mae)[ , "Fat", drop = FALSE])
+
+library(ggplot2)
+
+res <- res |> as.data.frame()
+
+ggplot(res, aes(x = PC1, y = PC2, color = Fat)) +
+    geom_point(size = 3, alpha = 0.9) +
+    theme_minimal() +
+    labs(x = "PC1", y = "PC2", color = "Fat")
 ```
 
 # Citing `multiomics`
