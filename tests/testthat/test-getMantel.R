@@ -106,16 +106,20 @@ test_that("getMantel validates list inputs and arguments", {
     expect_error(
         do.call(
             getMantel,
-            c(list(list(inputs$first, inputs$second)),
-                list(dist.methods = "euclidean"))
+            c(
+                list(list(inputs$first, inputs$second)),
+                list(dist.methods = "euclidean")
+            )
         ),
         "dist.methods"
     )
     expect_error(
         do.call(
             getMantel,
-            c(list(list(inputs$first, inputs$second)),
-                list(dist.methods = c("not-a-distance", "euclidean")))
+            c(
+                list(list(inputs$first, inputs$second)),
+                list(dist.methods = c("not-a-distance", "euclidean"))
+            )
         )
     )
     expect_error(
