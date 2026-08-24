@@ -123,6 +123,9 @@ setMethod("getLASSO",
         if (!(is.list(x) && length(x) == 2L)) {
             stop("'x' must be a list of 2.")
         }
+        if (!all(vapply(x, is.matrix, logical(1L)))) {
+            stop("'x' must include matrices.", call. = FALSE)
+        }
         if (length(setdiff(colnames(x[[1L]]), colnames(x[[2L]]))) > 0L) {
             stop("Sample names (coluns) must match.")
         }
