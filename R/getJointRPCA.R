@@ -38,11 +38,13 @@
 #' @examples
 #' samples <- paste0("sample", seq_len(10L))
 #' first <- matrix(
-#'     rnorm(40L), nrow = 4L,
+#'     rnorm(40L),
+#'     nrow = 4L,
 #'     dimnames = list(paste0("feature", seq_len(4L)), samples)
 #' )
 #' second <- matrix(
-#'     rnorm(30L), nrow = 3L,
+#'     rnorm(30L),
+#'     nrow = 3L,
 #'     dimnames = list(paste0("feature", seq_len(3L)), samples)
 #' )
 #' mae <- MultiAssayExperiment::MultiAssayExperiment(
@@ -85,20 +87,23 @@ NULL
 
 #' @rdname getJointRPCA
 #' @export
-setMethod("getJointRPCA", signature = c(x = "MultiAssayExperiment"),
-    function(x, experiments, assay.types, ...){
+setMethod("getJointRPCA",
+    signature = c(x = "MultiAssayExperiment"),
+    function(x, experiments, assay.types, ...) {
         .check_input(
             experiments, c("character vector", "integer vector")
         )
         .check_input(assay.types, "character vector")
-        if( !(length(experiments) == length(assay.types) &&
-                length(experiments) > 1L) ){
+        if (!(length(experiments) == length(assay.types) &&
+            length(experiments) > 1L)) {
             stop("The lengths of 'experiments' and 'assay.types' must match ",
                 "and there must be multiple experiments selected.",
-                call. = FALSE)
+                call. = FALSE
+            )
         }
         mat_list <- .prepare_mae_for_joint_rpca(
-            x, experiments, assay.types, ...)
+            x, experiments, assay.types, ...
+        )
         res <- .run_joint_rpca_analysis(mat_list, ...)
         return(res)
     }
@@ -106,17 +111,19 @@ setMethod("getJointRPCA", signature = c(x = "MultiAssayExperiment"),
 
 #' @rdname getJointRPCA
 #' @export
-setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
-    function(x, experiments, assay.types, ...){
+setMethod("getJointRPCA",
+    signature = c(x = "SingleCellExperiment"),
+    function(x, experiments, assay.types, ...) {
         .check_input(
             experiments, c("character vector", "integer vector")
         )
         .check_input(assay.types, "character vector")
-        if( !(length(experiments) == length(assay.types) &&
-                length(experiments) > 1L) ){
+        if (!(length(experiments) == length(assay.types) &&
+            length(experiments) > 1L)) {
             stop("The lengths of 'experiments' and 'assay.types' must match ",
                 "and there must be multiple experiments selected.",
-                call. = FALSE)
+                call. = FALSE
+            )
         }
         mat_list <- .prepare_tse_for_joint_rpca(x, experiments, assay.types)
         res <- .run_joint_rpca_analysis(mat_list, ...)
@@ -127,7 +134,7 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
 ################################ HELP FUNCTIONS ################################
 
 # This function retrieves specific tables from MAE
-.prepare_mae_for_joint_rpca <- function(x, experiments, assay.types, ...){
+.prepare_mae_for_joint_rpca <- function(x, experiments, assay.types, ...) {
     mat_list <- .get_shared_samples_from_mae(
         x, experiments, assay.types, ...
     )
@@ -137,7 +144,7 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
 }
 
 # This function retrieves specific tables from TreeSE
-.prepare_tse_for_joint_rpca <- function(x, experiments, assay.types){
+.prepare_tse_for_joint_rpca <- function(x, experiments, assay.types) {
     mat_list <- .get_shared_samples_from_tse(x, experiments, assay.types)
     # Change orientation so that samples are in rows
     lapply(mat_list, t)
@@ -152,34 +159,39 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
 
 # This function calculates Joint-RPCA for multiple tables. It runs the whole
 # analysis from test/train set split to projecting the results to test set.
-.run_joint_rpca_analysis <- function(mat_list, test.set = NULL, ...){
-    if( !(is.null(test.set) || is.character(test.set)) ){
+.run_joint_rpca_analysis <- function(mat_list, test.set = NULL, ...) {
+    if (!(is.null(test.set) || is.character(test.set))) {
         stop("'test.set' must specify sample names for test set or be NULL.",
-            call. = FALSE)
+            call. = FALSE
+        )
     }
     # Determine train/test split. User can define test set samples with vector
     # or then we can select representative samples based on RPCA of first table.
     all_samples <- mat_list[[1L]] |> rownames()
-    if( is.null(all_samples) ){
-        all_samples <- mat_list[[1L]] |> nrow() |> seq_len()
+    if (is.null(all_samples)) {
+        all_samples <- mat_list[[1L]] |>
+            nrow() |>
+            seq_len()
     }
-    if( !is.null(test.set) ){
-        test_samples <- which( all_samples %in% test.set )
-    } else{
+    if (!is.null(test.set)) {
+        test_samples <- which(all_samples %in% test.set)
+    } else {
         test_samples <- .determine_test_set_for_rpca(mat_list[[1L]], ...)
     }
-    all_index <- all_samples |> length() |> seq_len()
-    train_samples <- all_index[ !all_index %in% test_samples ]
+    all_index <- all_samples |>
+        length() |>
+        seq_len()
+    train_samples <- all_index[!all_index %in% test_samples]
 
     # Split tables to train and test sets
-    train_set <- lapply(mat_list, function(x){
+    train_set <- lapply(mat_list, function(x) {
         x[train_samples, , drop = FALSE]
     })
-    test_set <- lapply(mat_list, function(x){
+    test_set <- lapply(mat_list, function(x) {
         x[test_samples, , drop = FALSE]
     })
     # If user did not specify test set, use training set as test set
-    if( all(lengths(test_set) == 0L) ){
+    if (all(lengths(test_set) == 0L)) {
         test_set <- train_set
     }
 
@@ -193,16 +205,19 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
     res <- rbind(res, projected)
     # Sort back to original order
     res <- res[
-        order(c(train_samples, test_samples)), , drop = FALSE]
+        order(c(train_samples, test_samples)), ,
+        drop = FALSE
+    ]
     # Add additional info back
     attr_list <- c(attributes(res), attr_list)
-    attr_list <- attr_list[ !duplicated(names(attr_list)) ]
+    attr_list <- attr_list[!duplicated(names(attr_list))]
     attributes(res) <- attr_list
 
     # Calculate error between low rank and original test set
     num_features <- vapply(mat_list, ncol, numeric(1L))
     reconstruct_error <- .calculate_reconstruct_error(
-        res, test_set, num_features)
+        res, test_set, num_features
+    )
     attributes(res)[["reconstruct_error"]] <- reconstruct_error
 
     # Add layer dimensions
@@ -216,7 +231,7 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
 }
 
 # This function runs RPCA to single table
-.calculate_rpca <- function(mat, ncomponents = 3L, ...){
+.calculate_rpca <- function(mat, ncomponents = 3L, ...) {
     # Get lower rank representation of the data
     opt_results <- .get_lower_rank_mat(mat, ncomponents = ncomponents, ...)
     # The result might have lower number of columns if they were not able to be
@@ -224,7 +239,9 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
     ncomponents <- opt_results[["raw"]][["S"]] |> ncol()
     # Apply pca to lower rank representation
     pca_results <- .calculate_pca(
-        opt_results[["matrix"]], ncomponents = ncomponents)
+        opt_results[["matrix"]],
+        ncomponents = ncomponents
+    )
     # Calculate distance in PCA space
     distance <- pca_results[["sample_scores"]] |> stats::dist()
     # Create a final results to return to user
@@ -235,16 +252,20 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
 # This function runs Joint-RPCA. The only difference to .calculate_rpca is that
 # the lower dimension matrix is estimated by optimizing feature loadings
 # separately (sample loadings and singular values are estimated jointly).
-.calculate_joint_rpca <- function(mat_list, test_set, ncomponents = 3L, ...){
+.calculate_joint_rpca <- function(mat_list, test_set, ncomponents = 3L, ...) {
     # Get lower rank representation of the data
     opt_results <- .get_lower_rank_joint_mat(
-        mat_list, test_set, ncomponents = ncomponents, ...)
+        mat_list, test_set,
+        ncomponents = ncomponents, ...
+    )
     # The result might have lower number of columns if they were not able to be
     # estimated.
     ncomponents <- opt_results[["raw"]][["S"]] |> ncol()
     # Apply pca to lower rank representation
     pca_results <- .calculate_pca(
-        opt_results[["matrix"]], ncomponents = ncomponents)
+        opt_results[["matrix"]],
+        ncomponents = ncomponents
+    )
     # Calculate distance in PCA space
     distance <- pca_results[["sample_scores"]] |> stats::dist()
     # Create a final results to return to user
@@ -254,12 +275,11 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
 
 # This function constructs a lower rank representation from the data. The idea
 # is to extract the essential from the data and to remove noise.
-.get_lower_rank_mat <- function(
-        mat,
-        ncomponents = pmin(3L, nrow(mat), ncol(mat)),
-        max.iterations = 5L,
-        tolerance = 1e-5,
-        ...){
+.get_lower_rank_mat <- function(mat,
+                                ncomponents = pmin(3L, nrow(mat), ncol(mat)),
+                                max.iterations = 5L,
+                                tolerance = 1e-5,
+                                ...) {
     # Create lower rank representation
     opt_result <- vegan::optspace(
         x = mat,
@@ -284,11 +304,10 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
 }
 
 # Construct lower rank representation from a list of matrices.
-.get_lower_rank_joint_mat <- function(
-        mat_list, mat_list_test,
-        ncomponents = pmin(3L, nrow(mat_list[[1L]]), ncol(mat_list[[1L]])),
-        max.iterations = 5L,
-        ...){
+.get_lower_rank_joint_mat <- function(mat_list, mat_list_test,
+                                      ncomponents = pmin(3L, nrow(mat_list[[1L]]), ncol(mat_list[[1L]])),
+                                      max.iterations = 5L,
+                                      ...) {
     # Create lower rank representation
     opt_result <- .joint_optspace(
         x = mat_list,
@@ -313,7 +332,7 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
 }
 
 # This function applies PCA to the data.
-.calculate_pca <- function(mat, ncomponents){
+.calculate_pca <- function(mat, ncomponents) {
     # Double center the data
     mat <- .apply_double_centering(mat)
 
@@ -328,9 +347,9 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
     # u <- u %*% diag(s)
 
     # Subset. There might be more components than requested.
-    u <- u[ , seq_len(ncomponents), drop = FALSE]
-    s <- s[ seq_len(ncomponents) ]
-    v <- v[ , seq_len(ncomponents), drop = FALSE]
+    u <- u[, seq_len(ncomponents), drop = FALSE]
+    s <- s[seq_len(ncomponents)]
+    v <- v[, seq_len(ncomponents), drop = FALSE]
 
     # Adjust dimnames
     names(s) <- paste0("PC", s |> length() |> seq_len())
@@ -350,10 +369,10 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
 
 # This function constructs a final result to user. It does not calculate, but
 # re-structures the results to returned format.
-.construct_rpca_result <- function(pca_results, opt_results, distance){
+.construct_rpca_result <- function(pca_results, opt_results, distance) {
     # We return the PCA sample scores as main results
     mat <- pca_results[["sample_scores"]]
-    attr_list <- pca_results[ c("varExplained", "rotation", "center", "scale") ]
+    attr_list <- pca_results[c("varExplained", "rotation", "center", "scale")]
 
     # Calculate the explained variance in percentages
     percent_var <- pca_results[["varExplained"]]^2 /
@@ -375,23 +394,24 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
 # This function selects a representative set of samples to test set. This is
 # done by applying RPCA for the first table and selecting samples from PC1 with
 # a highest variance.
-.determine_test_set_for_rpca <- function(
-        mat, n.test.samples = NULL, test.ratio = 0.2, ...){
-    if( !(is.null(n.test.samples) ||
-            (.is_an_integer(n.test.samples) && n.test.samples > 0)) ){
+.determine_test_set_for_rpca <- function(mat, n.test.samples = NULL, test.ratio = 0.2, ...) {
+    if (!(is.null(n.test.samples) ||
+        (.is_an_integer(n.test.samples) && n.test.samples > 0))) {
         stop("'n.test.samples' must be a single positive integer value.",
-            call. = FALSE)
+            call. = FALSE
+        )
     }
-    if( !(.is_a_numeric(test.ratio) && test.ratio >= 0 && test.ratio < 1) ){
+    if (!(.is_a_numeric(test.ratio) && test.ratio >= 0 && test.ratio < 1)) {
         stop("'test.ratio' must be a numeric value in the range [0, 1).",
-            call. = FALSE)
+            call. = FALSE
+        )
     }
     # Select number of samples
-    if( is.null(n.test.samples) ){
+    if (is.null(n.test.samples)) {
         n.test.samples <- ceiling(test.ratio * nrow(mat))
     }
     test_samples <- c()
-    if( n.test.samples > 0L ){
+    if (n.test.samples > 0L) {
         # Calculate RPCA
         pca_result <- .calculate_rpca(mat, ...)
         # Select N samples so that they span over the PC1 axis. Idea is that
@@ -399,9 +419,11 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
         # maximally different samples.
         first_component <- pca_result[, 1] |> sort()
         test_samples <- seq(
-            1, length(first_component), length.out = n.test.samples) |>
+            1, length(first_component),
+            length.out = n.test.samples
+        ) |>
             round()
-        test_samples <- names(first_component)[ test_samples ]
+        test_samples <- names(first_component)[test_samples]
         test_samples <- match(test_samples, rownames(pca_result))
     }
     return(test_samples)
@@ -409,7 +431,7 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
 
 # This function projects test set samples to PCA space that were obtained with
 # train set.
-.project_test_set_to_rpca <- function(pca_result, mat){
+.project_test_set_to_rpca <- function(pca_result, mat) {
     # Extract PCA components
     feature_scores <- attributes(pca_result)[["rotation"]]
     singular_values <- attributes(pca_result)[["varExplained"]]
@@ -420,7 +442,7 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
     # NAs are set to zero during matrix multiplication so they do not contribute
     # to the projection. Otherwise, the NAs propagate and the projection step
     # fails.
-    mat[ is.na(mat) ] <- 0
+    mat[is.na(mat)] <- 0
 
     # Project into PCA space
     projected <- mat %*% feature_scores
@@ -436,25 +458,25 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
 # on parameters learned from train set. The idea is to assess, how well the
 # lower rank representation learns the generic, generalizable patterns from the
 # data.
-.calculate_reconstruct_error <- function(res, test_set, num_features){
+.calculate_reconstruct_error <- function(res, test_set, num_features) {
     # Get learned parameters
     u_shared <- attributes(res)[["X"]]
     s_shared <- attributes(res)[["S"]]
     y_shared <- attributes(res)[["Y"]]
 
     # Split feature loadings by table
-    ends   <- cumsum(num_features)
+    ends <- cumsum(num_features)
     starts <- c(1, utils::head(ends, -1) + 1)
     y_individual <- mapply(function(s, e) {
         y_shared[s:e, ]
     }, starts, ends)
 
     # Calculate error separately for each table
-    errors_per_set <- vapply(seq_len(length(test_set)), function(i){
+    errors_per_set <- vapply(seq_len(length(test_set)), function(i) {
         test_mat <- test_mat_zeroed <- test_set[[i]]
         # NAs are set to zero during matrix multiplication so they do not
         # contribute to the projection.
-        test_mat_zeroed[ is.na(test_mat_zeroed) ] <- 0
+        test_mat_zeroed[is.na(test_mat_zeroed)] <- 0
         # Create projection for test set
         u_test <- test_mat_zeroed %*% y_individual[[i]]
         u_test <- sweep(u_test, 2, diag(s_shared), "/")
@@ -509,24 +531,26 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
 # )
 # -----------------------------------------------------------------------------
 #
-.joint_optspace <- function(x, x_test = x, ropt = 3, niter = 5){
+.joint_optspace <- function(x, x_test = x, ropt = 3, niter = 5) {
     # Validate input
-    if( !(is.list(x) && all(vapply(
-            x, function(mat) is.matrix(mat) || is.data.frame(mat),
-            logical(1L))) ) ){
+    if (!(is.list(x) && all(vapply(
+        x, function(mat) is.matrix(mat) || is.data.frame(mat),
+        logical(1L)
+    )))) {
         stop("'x' must be a list of matrices.", call. = FALSE)
     }
-    if( vapply(x, nrow, integer(1L)) |> unique() |> length() != 1L ){
+    if (vapply(x, nrow, integer(1L)) |> unique() |> length() != 1L) {
         stop("All tables must have equal number of samples (rows).",
-            call. = FALSE)
+            call. = FALSE
+        )
     }
-    if( do.call(cbind, x) |> is.infinite() |> any() ){
+    if (do.call(cbind, x) |> is.infinite() |> any()) {
         stop("Infinite values are not allowed.", call. = FALSE)
     }
-    if( !.is_an_integer(niter) ){
+    if (!.is_an_integer(niter)) {
         stop("'niter' must be a single integer value.", call. = FALSE)
     }
-    if( !.is_an_integer(ropt) ){
+    if (!.is_an_integer(ropt)) {
         stop("'ropt' must be a single integer value.", call. = FALSE)
     }
     #
@@ -546,21 +570,23 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
     # Used for validating maximum rank.
     min_feat <- n_features |> min()
     # ropt cannot exceed number of samples or smallest feature dimension
-    if( (ropt < 1) || (ropt > min_feat) || (ropt > n_samples) ){
+    if ((ropt < 1) || (ropt > min_feat) || (ropt > n_samples)) {
         stop("'ropt' must be integer in [1, ",
             min(n_samples, min_feat),
-            "]", call. = FALSE)
+            "]",
+            call. = FALSE
+        )
     }
 
     # Prepare tables for optspace. In first table convert all NA values to 0.
-    observed_list <- lapply(x, function(mat){
-        mat[ is.na(mat) ] <- 0
+    observed_list <- lapply(x, function(mat) {
+        mat[is.na(mat)] <- 0
         return(mat)
     })
     # The second table shows which cells included a value. Zeroes are also
     # treated as missing.
-    mask_list <- lapply(x, function(mat){
-        mat[ is.na(mat) ] <- 0
+    mask_list <- lapply(x, function(mat) {
+        mat[is.na(mat)] <- 0
         mask <- abs(mat) > 0
         storage.mode(mask) <- "integer"
         return(mask)
@@ -591,23 +617,25 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
     # gives sensible starting point for gradient descent.
     init_res <- .initialize_joint_optspace(
         observed_stacked, observed_list, mask_stacked, mask_list, ropt, eps,
-        n_samples, n_features)
+        n_samples, n_features
+    )
     U_shared <- init_res[["U_shared"]]
     S_shared <- init_res[["S_shared"]]
     V_list <- init_res[["V_list"]]
 
     # Now we start iteratively refine U_shared, S_shared and V
     cv_errors <- data.frame(mean = numeric(0L), sd = numeric(0L))
-    for( i in seq_len(niter) ){
+    for (i in seq_len(niter)) {
         sample_loadings <- vector("list", n_tables)
         cv_iter <- c()
 
         # Iterate over tables
-        for( table_i in seq_len(n_tables) ){
+        for (table_i in seq_len(n_tables)) {
             # Perform gradient update for current table
             res <- .gradient_update_joint_optspace(
                 table_i, observed_list, mask_list, U_shared,
-                S_shared, V_list, rho)
+                S_shared, V_list, rho
+            )
             # Store table-specific updates
             # Proposal for shared U
             sample_loadings[[table_i]] <- res[["U_i"]]
@@ -628,7 +656,8 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
         # NumPy in Python implementation uses population SD (ddof=0) by default,
         # while R’s sd() uses sample SD (ddof=1).
         cv_iter <- data.frame(
-            mean_CV = mean(cv_iter), std_CV = .population_sd(cv_iter))
+            mean_CV = mean(cv_iter), std_CV = .population_sd(cv_iter)
+        )
         cv_errors <- rbind(cv_errors, cv_iter)
 
         # Update the shared sample factors (U_shared)
@@ -641,7 +670,8 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
         # - Perform SVD on X_U to extract the principal singular values
         # - Normalize by Frobenius norm
         X_U <- Reduce(
-            "+", lapply(sample_loadings, function(u) u %*% t(u))) / n_tables
+            "+", lapply(sample_loadings, function(u) u %*% t(u))
+        ) / n_tables
         svd_res <- svd(X_U)
 
         # svd() can return fewer than `ropt` singular values when X_U is
@@ -664,7 +694,7 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
 
         # Align table-specific loadings with updated S_shared for consistent
         # reconstruction
-        V_list <- lapply(V_list, function(V){
+        V_list <- lapply(V_list, function(V) {
             t(S_shared %*% t(V))
         })
     }
@@ -692,9 +722,8 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
 }
 
 # Initialize U, S and V by doing SVD with stacked data.
-.initialize_joint_optspace <- function(
-        observed_stacked, observed_list, mask_stacked, mask_list, ropt, eps,
-        n_samples, n_features){
+.initialize_joint_optspace <- function(observed_stacked, observed_list, mask_stacked, mask_list, ropt, eps,
+                                       n_samples, n_features) {
     # Run SVD. Our initial first guess are the loadings generated
     # by the traditional SVD.
     svd_res <- svd(observed_stacked)
@@ -709,11 +738,15 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
 
     U_shared <- svd_res[["u"]][, seq_len(ropt), drop = FALSE]
     U_shared <- U_shared[
-        , U_shared |> ncol() |> seq_len() |> rev(), drop = FALSE]
+        , U_shared |> ncol() |> seq_len() |> rev(),
+        drop = FALSE
+    ]
     S_shared <- diag(rev(d), nrow = ropt)
     V_shared <- svd_res[["v"]][, seq_len(ropt), drop = FALSE]
     V_shared <- V_shared[
-        , V_shared |> ncol() |> seq_len() |> rev(), drop = FALSE]
+        , V_shared |> ncol() |> seq_len() |> rev(),
+        drop = FALSE
+    ]
 
     # The shape and number of non-zero values
     # can set the input parameters for the gradient
@@ -725,10 +758,11 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
     # Generate the new singular values from
     # the initialization of U and V
     S_shared <- .aux_getoptS(
-        U_shared, V_shared, observed_stacked, mask_stacked)
+        U_shared, V_shared, observed_stacked, mask_stacked
+    )
 
     # Split feature loadings by table
-    ends   <- cumsum(n_features)
+    ends <- cumsum(n_features)
     starts <- c(1, utils::head(ends, -1) + 1)
     V_list <- mapply(function(s, e) {
         V_shared[seq(s, e), , drop = FALSE]
@@ -744,18 +778,17 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
 
 # Perform one gradient descent update for a single table. For each table, this
 # produces proposal for U_shared and S_shared which are then later averaged.
-.gradient_update_joint_optspace <- function(
-        table_i, observed_list, mask_list, U_shared, S_shared, V_list,
-        rho, step.size = 1e4, sign.correction = -1){
-    if( !(.is_an_integer(step.size) && step.size > 0) ){
+.gradient_update_joint_optspace <- function(table_i, observed_list, mask_list, U_shared, S_shared, V_list,
+                                            rho, step.size = 1e4, sign.correction = -1) {
+    if (!(.is_an_integer(step.size) && step.size > 0)) {
         stop("'step.size' must be a single positive integer.", call. = FALSE)
     }
-    if( !(.is_an_integer(sign.correction) && sign.correction %in% c(-1, 1)) ){
+    if (!(.is_an_integer(sign.correction) && sign.correction %in% c(-1, 1))) {
         stop("'sign.correction' must be either -1 or 1.", call. = FALSE)
     }
-    obs  <- observed_list[[table_i]]
+    obs <- observed_list[[table_i]]
     mask <- mask_list[[table_i]]
-    V_i  <- V_list[[table_i]]
+    V_i <- V_list[[table_i]]
 
     # Compute gradient for table i
     grad_res <- .aux_gradF_t(
@@ -800,13 +833,12 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
         U_i = U_i,
         S_i = S_i,
         V_i = V_i
-
     )
     return(res)
 }
 
 # This function calculates error between original table and reconstructed table.
-.calculate_optspace_cv_error <- function(x_test, S, V, ...){
+.calculate_optspace_cv_error <- function(x_test, S, V, ...) {
     # Get mask, i.e., info on which values are NA
     mask <- x_test |> is.na()
     n_obs <- sum(!mask)
@@ -839,13 +871,15 @@ setMethod("getJointRPCA", signature = c(x = "SingleCellExperiment"),
 
 # This function applies double centering of the data, i.e., it centers columns
 # and rows.
-.apply_double_centering <- function(mat, na.rm = TRUE, ...){
+.apply_double_centering <- function(mat, na.rm = TRUE, ...) {
     mat <- sweep(mat, 1L, rowMeans(mat, na.rm = na.rm), "-")
     mat <- sweep(mat, 2L, colMeans(mat, na.rm = na.rm), "-")
     return(mat)
 }
 
 # Calculate population standard deviation
-.population_sd <- function(x){
-    (x - mean(x))^2 |> mean() |> sqrt()
+.population_sd <- function(x) {
+    (x - mean(x))^2 |>
+        mean() |>
+        sqrt()
 }
