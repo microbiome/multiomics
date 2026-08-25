@@ -2,10 +2,12 @@
 
 export(getLASSO)
 export(getMantel)
+export(getCrossAssociation)
 export(getMiRKAT)
 export(getRDA)
 exportMethods(getLASSO)
 exportMethods(getMantel)
+exportMethods(getCrossAssociation)
 exportMethods(getMiRKAT)
 exportMethods(getRDA)
 importFrom(MiRKAT,D2K)
