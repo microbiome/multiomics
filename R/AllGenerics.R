@@ -6,6 +6,16 @@ setGeneric("getMantel", signature = "x", function(x, ...) {
     standardGeneric("getMantel")
 })
 
+#' @rdname getCrossAssociation
+#' @export
+setGeneric(
+    "getCrossAssociation",
+    signature = "x",
+    function(x, method = "pearson", ...) {
+        standardGeneric("getCrossAssociation")
+    }
+)
+
 #' @rdname getRDA
 #' @export
 setGeneric("getRDA", signature = "x", function(x, ...) {
