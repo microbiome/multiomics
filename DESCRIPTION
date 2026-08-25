@@ -27,6 +27,7 @@ Imports:
     vegan
 Suggests:
     BiocStyle,
+    ggplot2,
     ggvegan,
     knitr,
     mia,
