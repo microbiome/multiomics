@@ -2,10 +2,12 @@
 
 export(getLASSO)
 export(getMantel)
+export(getJointRPCA)
 export(getMiRKAT)
 export(getRDA)
 exportMethods(getLASSO)
 exportMethods(getMantel)
+exportMethods(getJointRPCA)
 exportMethods(getMiRKAT)
 exportMethods(getRDA)
 importFrom(MiRKAT,D2K)
