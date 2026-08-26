@@ -155,7 +155,7 @@ Note that this method is based on linear relationships, which requires using
 CLR-transformed data.
 
 ```{r rda}
-rda <- getRDA(
+rda <- getJointRDA(
     mae,
     experiments = c(1, 2),
     assay.types = c("rclr", "log10")
@@ -166,27 +166,7 @@ rda
 The results of RDA are usually visualized with a biplot.
 
 ```{r show_rda}
-library(ggvegan)
-p <- ordiggplot(rda) +
-    geom_ordi_axis() +
-    geom_ordi_point("sites") +
-    geom_ordi_arrow("species")  +
-    geom_ordi_arrow("biplot")
-
-# Add coloring
-gb <- ggplot_build(p)
-
-sites <- dplyr::left_join(
-    gb$data[[3]],
-    colData(mae) |> as.data.frame(),
-    by = c("label" = "Sample")
-)
-
-p + geom_point(
-        data = sites,
-        aes(x, y, colour = Fat),
-        size = 3
-    )
+plot(rda)
 ```
 
 Based on the results, 96\% of the microbiome variance can be explained by
@@ -210,12 +190,7 @@ mirkat |> head()
 We can visualize the p-values for instance with a bar plot.
 
 ```{r visualize_mirkat}
-ggplot(mirkat, aes(x = reorder(rownames(mirkat), desc(omnibus_p)), y = omnibus_p)) +
-    geom_col() +
-    coord_flip() +
-    theme_minimal() +
-    geom_hline(yintercept = 0.05, color = "red", linewidth = 1) +
-    labs(x = NULL, y = "omnibus p-value")
+plot(mirkat)
 ```
 
 For instance, _rownames(mirkat)[ order(mirkat[["omnibus_p_adj"]]) ][[1L]]_ is
@@ -240,28 +215,7 @@ To visualize these relationships, we use a heatmap of the coefficient matrix.
 Positive and negative coefficients indicate positive and negative associations.
 
 ```{r show_coda_lasso}
-# Put into long format for ggplot
-library(tidyr)
-df_long <- coda_lasso |>
-    as.data.frame() |>
-    tibble::rownames_to_column("Taxa") |>
-    pivot_longer(
-        cols = -Taxa,
-        names_to = "Metabolite",
-        values_to = "Coefficient"
-    )
-
-library(ggplot2)
-ggplot(df_long, aes(x = Metabolite, y = Taxa, fill = Coefficient)) +
-    geom_tile() +
-    scale_fill_gradient2(
-        low = "blue",
-        mid = "white",
-        high = "red",
-        midpoint = 0
-    ) +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+plot(coda_lasso)
 ```
 
 ## Are there shared latent drivers in microbiome and metabolite data?
@@ -281,7 +235,7 @@ mae[[1]] <- transformAssay(
     name = "rclr_wo_imputation")
 
 # Run joint-RPCA
-res <- getJointRPCA(
+mae <- addJointRPCA(
    mae,
    experiments = c(1, 2),
    assay.types = c("rclr_wo_imputation", "log10")
@@ -291,16 +245,9 @@ res <- getJointRPCA(
 The result can be visualize with a scatter plot similarly to regular PCA.
 
 ```{r visualize_joint_rpca}
-res <- cbind(res, colData(mae)[ , "Fat", drop = FALSE])
+library(miaViz)
 
-library(ggplot2)
-
-res <- res |> as.data.frame()
-
-ggplot(res, aes(x = PC1, y = PC2, color = Fat)) +
-    geom_point(size = 3, alpha = 0.9) +
-    theme_minimal() +
-    labs(x = "PC1", y = "PC2", color = "Fat")
+plotJointRPCA(mae, "JointRPCA")
 ```
 
 # Citing `multiomics`

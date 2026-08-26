@@ -16,13 +16,6 @@
 #' \code{glmnet} with cross-validation to select the optimal regularization
 #' parameter.
 #'
-#' The result is a taxa × metabolite coefficient matrix, where:
-#' \itemize{
-#'   \item Rows correspond to microbiome features (taxa)
-#'   \item Columns correspond to metabolites
-#'   \item Values are regression coefficients
-#' }
-#'
 #' Non-selected taxa (i.e., coefficients shrunk to zero) are represented as
 #' \code{NA}.
 #'
@@ -68,11 +61,14 @@
 #' mae[[1]] <- agglomerateByRank(mae[[1]], rank = "Phylum")
 #'
 #' # Perform LASSO
-#' getLASSO(
+#' res <- getLASSO(
 #'     mae,
 #'     experiments = c(1, 2),
 #'     assay.types = c("counts", "nmr")
-#' ) |> head()
+#' )
+#'
+#' # Visualize results
+#' plotLASSO(res)
 #'
 #' @seealso
 #' \code{\link[glmnet:cv.glmnet]{glmnet::cv.glmnet()}}
@@ -183,6 +179,11 @@ setMethod("getLASSO",
         )
     }
 
+    coef_res <- as.data.frame(as.table(coef_res))
+    colnames(coef_res) <- c("feature1", "feature2", "value")
+
+    class(coef_res) <- c("LASSO", class(coef_res))
+
     return(coef_res)
 }
 
@@ -289,4 +290,17 @@ setMethod("getLASSO",
     full_mat <- rowsum(full_mat, group = rownames(full_mat), reorder = FALSE)
 
     return(full_mat)
+}
+
+################################### PLOTTING ###################################
+
+#' @rdname getLASSO
+#' @export
+plot.LASSO <- function(x, sort = TRUE, ...) {
+    .check_input(sort, "logical scalar")
+    if( sort ){
+        x <- .order_features(x)
+    }
+    p <- .plot_heatmap(x, ...)
+    return(p)
 }

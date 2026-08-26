@@ -27,10 +27,10 @@ make_rda_mae <- function(inputs) {
     )
 }
 
-test_that("getRDA matches vegan::rda for list input", {
+test_that("getJointRDA matches vegan::rda for list input", {
     inputs <- make_rda_inputs()
 
-    result <- getRDA(list(inputs$predictors, inputs$responses))
+    result <- getJointRDA(list(inputs$predictors, inputs$responses))
     expected <- vegan::rda(
         X = t(inputs$predictors),
         Y = t(inputs$responses)
@@ -44,12 +44,12 @@ test_that("getRDA matches vegan::rda for list input", {
     expect_equal(abs(result$CA$u), abs(expected$CA$u))
 })
 
-test_that("getRDA preserves results through a MultiAssayExperiment", {
+test_that("getJointRDA preserves results through a MultiAssayExperiment", {
     inputs <- make_rda_inputs()
     mae <- make_rda_mae(inputs)
 
-    direct_result <- getRDA(list(inputs$predictors, inputs$responses))
-    mae_result <- getRDA(
+    direct_result <- getJointRDA(list(inputs$predictors, inputs$responses))
+    mae_result <- getJointRDA(
         mae,
         experiments = c(1L, 2L),
         assay.types = c("counts", "counts")
@@ -63,30 +63,30 @@ test_that("getRDA preserves results through a MultiAssayExperiment", {
     expect_equal(abs(mae_result$CA$u), abs(direct_result$CA$u))
 })
 
-test_that("getRDA validates list inputs and arguments", {
+test_that("getJointRDA validates list inputs and arguments", {
     inputs <- make_rda_inputs()
 
     expect_error(
-        getRDA(inputs$predictors),
+        getJointRDA(inputs$predictors),
         "must be list"
     )
     expect_error(
-        getRDA(list(inputs$predictors)),
+        getJointRDA(list(inputs$predictors)),
         "length must be 2"
     )
     expect_error(
-        getRDA(list(as.data.frame(inputs$predictors), inputs$responses)),
+        getJointRDA(list(as.data.frame(inputs$predictors), inputs$responses)),
         "include matrices"
     )
 
     mismatched <- inputs$responses
     colnames(mismatched)[[1L]] <- "not-a-sample"
     expect_error(
-        getRDA(list(inputs$predictors, mismatched)),
+        getJointRDA(list(inputs$predictors, mismatched)),
         "Sample names"
     )
     expect_error(
-        getRDA(
+        getJointRDA(
             list(inputs$predictors, inputs$responses),
             scale = NA
         )

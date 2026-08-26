@@ -113,10 +113,13 @@
     )) {
         input_correct <- TRUE
     }
-    if ("data.frame" %in% classes_char && is.data.frame(variable)) {
+    if ("data.frame" %in% classes_char && (is.data.frame(variable) || is(variable, "DFrame"))) {
         input_correct <- TRUE
     }
     if ("matrix" %in% classes_char && is.matrix(variable)) {
+        input_correct <- TRUE
+    }
+    if ("formula" %in% classes_char && "formula" %in% class(variable)) {
         input_correct <- TRUE
     }
     # If supported values were provided. Check these only if the variable
@@ -571,4 +574,10 @@
     df <- do.call(cbind, dfs)
     df <- df[, !duplicated(colnames(df)), drop = FALSE]
     return(df)
+}
+
+.get_rhs <- function(formula) {
+    all_vars <- all.vars(formula)
+    rhs <- all_vars[-1L]
+    return(rhs)
 }
