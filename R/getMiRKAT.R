@@ -190,7 +190,7 @@ setMethod("getMiRKAT",
     colnames(res) <- gsub("\\.", "_", colnames(res)) |> tolower()
 
     # Adjust p-values because of multiple testing
-    if( "omnibus_p" %in% colnames(res) ){
+    if ("omnibus_p" %in% colnames(res)) {
         res[["omnibus_p_adj"]] <- p.adjust(
             res[["omnibus_p"]],
             method = p.adjust.method
@@ -203,19 +203,18 @@ setMethod("getMiRKAT",
 }
 
 #' @rdname getMiRKAT
+#' @importFrom ggplot2 geom_point geom_segment
 #' @export
-plot.MiRKAT <- function(
-        x,
-        column = NULL,
-        ...
-) {
+plot.MiRKAT <- function(x,
+                        column = NULL,
+                        ...) {
     .check_input(
         column,
         c("NULL", "character vector"),
         supported_values = colnames(x)
     )
 
-    if( is.null(column) ){
+    if (is.null(column)) {
         column <- colnames(x)
     }
 
@@ -264,7 +263,7 @@ plot.MiRKAT <- function(
             fill = "black"
         ) +
         facet_wrap(
-            ~ metric,
+            ~metric,
             scales = "free_x"
         ) +
         labs(

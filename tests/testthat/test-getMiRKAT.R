@@ -217,3 +217,10 @@ test_that("getMiRKAT validates list inputs and arguments", {
         "Cannot find assay"
     )
 })
+
+test_that("plot.MiRKAT returns a ggplot", {
+    inputs <- make_mirkat_inputs()
+    result <- getMiRKAT(list(inputs$microbiome, inputs$outcomes), nperm = 9L)
+
+    expect_s3_class(plot(result), "ggplot")
+})
