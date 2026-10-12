@@ -5,7 +5,7 @@
 #' Microbiome Regression-based Kernel Association Test (MiRKAT)
 #'
 #' @description
-#' #' Performs association testing between microbiome composition and a second
+#' Performs association testing between microbiome composition and a second
 #' omic layer (e.g., metabolites) using the Microbiome Regression-based Kernel
 #' Association Test (MiRKAT). The method evaluates whether variation in
 #' microbiome profiles is associated with the outcome by comparing kernel
@@ -190,10 +190,97 @@ setMethod("getMiRKAT",
     colnames(res) <- gsub("\\.", "_", colnames(res)) |> tolower()
 
     # Adjust p-values because of multiple testing
-    res[["omnibus_p_adj"]] <- p.adjust(
-        res[["omnibus_p"]],
-        method = p.adjust.method
-    )
+    if( "omnibus_p" %in% colnames(res) ){
+        res[["omnibus_p_adj"]] <- p.adjust(
+            res[["omnibus_p"]],
+            method = p.adjust.method
+        )
+    }
+
+    class(res) <- c("MiRKAT", class(res))
 
     return(res)
+}
+
+#' @rdname getMiRKAT
+#' @export
+plot.MiRKAT <- function(
+        x,
+        column = NULL,
+        ...
+) {
+    .check_input(
+        column,
+        c("NULL", "character vector"),
+        supported_values = colnames(x)
+    )
+
+    if( is.null(column) ){
+        column <- colnames(x)
+    }
+
+    # Add feature names
+    x[["feature"]] <- rownames(x)
+
+    # Convert to long format
+    df <- x |>
+        tidyr::pivot_longer(
+            cols = all_of(column),
+            names_to = "metric",
+            values_to = "value"
+        )
+
+    # Order features separately for each metric
+    df <- df |>
+        dplyr::group_by(metric) |>
+        dplyr::mutate(
+            feature = factor(
+                feature,
+                levels = feature[
+                    order(value, decreasing = TRUE)
+                ]
+            )
+        ) |>
+        dplyr::ungroup()
+
+    # Plot
+    p <- ggplot(
+        df,
+        aes(
+            x = value,
+            y = feature
+        )
+    ) +
+        geom_segment(
+            aes(
+                x = 0,
+                xend = value,
+                y = feature,
+                yend = feature
+            )
+        ) +
+        geom_point(
+            shape = 21,
+            fill = "black"
+        ) +
+        facet_wrap(
+            ~ metric,
+            scales = "free_x"
+        ) +
+        labs(
+            x = NULL,
+            y = NULL
+        ) +
+        theme_minimal() +
+        theme(
+            strip.background = element_rect(
+                fill = "white",
+                colour = "black"
+            ),
+            strip.text = element_text(
+                face = "bold"
+            )
+        )
+
+    return(p)
 }
