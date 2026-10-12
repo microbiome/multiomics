@@ -6,6 +6,12 @@ setGeneric("getMantel", signature = "x", function(x, ...) {
     standardGeneric("getMantel")
 })
 
+#' @rdname getJointRPCA
+#' @export
+setGeneric("getJointRPCA", signature = "x", function(x, ...) {
+    standardGeneric("getJointRPCA")
+})
+
 #' @rdname getJointRDA
 #' @export
 setGeneric("getJointRDA", signature = "x", function(x, ...) {
