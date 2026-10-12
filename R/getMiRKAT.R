@@ -203,6 +203,7 @@ setMethod("getMiRKAT",
 }
 
 #' @rdname getMiRKAT
+#' @importFrom ggplot2 geom_point geom_segment
 #' @export
 plot.MiRKAT <- function(
         x,
