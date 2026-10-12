@@ -5,6 +5,7 @@
 \alias{getLASSO,MultiAssayExperiment-method}
 \alias{getLASSO,SingleCellExperiment-method}
 \alias{getLASSO,ANY-method}
+\alias{plot.LASSO}
 \title{Sparse association modeling between microbiome and metabolites using LASSO}
 \usage{
 getLASSO(x, ...)
@@ -14,6 +15,8 @@ getLASSO(x, ...)
 \S4method{getLASSO}{SingleCellExperiment}(x, experiments, assay.types, ...)
 
 \S4method{getLASSO}{ANY}(x, ...)
+
+\method{plot}{LASSO}(x, sort = TRUE, ...)
 }
 \arguments{
 \item{x}{\code{MultiAssayExperiment} or \code{SingleCellExperiment}.}
@@ -51,13 +54,6 @@ microbiome data as predictors. The procedure is implemented using
 \code{glmnet} with cross-validation to select the optimal regularization
 parameter.
 
-The result is a taxa × metabolite coefficient matrix, where:
-\itemize{
-\item Rows correspond to microbiome features (taxa)
-\item Columns correspond to metabolites
-\item Values are regression coefficients
-}
-
 Non-selected taxa (i.e., coefficients shrunk to zero) are represented as
 \code{NA}.
 
@@ -81,11 +77,14 @@ assay(mae[[2]])[is.na(assay(mae[[2]]))] <- 0
 mae[[1]] <- agglomerateByRank(mae[[1]], rank = "Phylum")
 
 # Perform LASSO
-getLASSO(
+res <- getLASSO(
     mae,
     experiments = c(1, 2),
     assay.types = c("counts", "nmr")
-) |> head()
+)
+
+# Visualize results
+plotLASSO(res)
 
 }
 \references{

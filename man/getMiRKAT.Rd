@@ -5,6 +5,7 @@
 \alias{getMiRKAT,MultiAssayExperiment-method}
 \alias{getMiRKAT,SingleCellExperiment-method}
 \alias{getMiRKAT,ANY-method}
+\alias{plot.MiRKAT}
 \title{Microbiome Regression-based Kernel Association Test (MiRKAT)}
 \usage{
 getMiRKAT(x, ...)
@@ -14,6 +15,8 @@ getMiRKAT(x, ...)
 \S4method{getMiRKAT}{SingleCellExperiment}(x, experiments, assay.types, ...)
 
 \S4method{getMiRKAT}{ANY}(x, dist.methods = c("euclidean", "manhattan", "canberra"), ...)
+
+\method{plot}{MiRKAT}(x, column = NULL, ...)
 }
 \arguments{
 \item{x}{\code{MultiAssayExperiment} or \code{SingleCellExperiment}.}
@@ -40,7 +43,7 @@ A \code{data.frame} where each row corresponds to an outcome variable
 }
 }
 \description{
-#' Performs association testing between microbiome composition and a second
+Performs association testing between microbiome composition and a second
 omic layer (e.g., metabolites) using the Microbiome Regression-based Kernel
 Association Test (MiRKAT). The method evaluates whether variation in
 microbiome profiles is associated with the outcome by comparing kernel

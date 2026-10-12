@@ -1,5 +1,5 @@
 #' @name
-#' getRDA
+#' getJointRDA
 #'
 #' @title
 #' Redundancy analysis between two omic layers
@@ -39,7 +39,7 @@
 #' assay(mae[[2]])[is.na(assay(mae[[2]]))] <- 0
 #'
 #' # Perform RDA
-#' getRDA(
+#' getJointRDA(
 #'     mae,
 #'     experiments = c(1, 2),
 #'     assay.types = c("counts", "nmr")
@@ -50,9 +50,9 @@
 #'
 NULL
 
-#' @rdname getRDA
+#' @rdname getJointRDA
 #' @export
-setMethod("getRDA",
+setMethod("getJointRDA",
     signature = c(x = "MultiAssayExperiment"),
     function(x, experiments, assay.types, ...) {
         .check_input(
@@ -63,14 +63,14 @@ setMethod("getRDA",
         mat_list <- .get_shared_samples_from_mae(
             x, experiments, assay.types, ...
         )
-        res <- getRDA(mat_list, ...)
+        res <- getJointRDA(mat_list, ...)
         return(res)
     }
 )
 
-#' @rdname getRDA
+#' @rdname getJointRDA
 #' @export
-setMethod("getRDA",
+setMethod("getJointRDA",
     signature = c(x = "SingleCellExperiment"),
     function(x, experiments, assay.types, ...) {
         .check_input(
@@ -81,14 +81,14 @@ setMethod("getRDA",
         mat_list <- .get_shared_samples_from_tse(
             x, experiments, assay.types, ...
         )
-        res <- getRDA(mat_list, ...)
+        res <- getJointRDA(mat_list, ...)
         return(res)
     }
 )
 
-#' @rdname getRDA
+#' @rdname getJointRDA
 #' @export
-setMethod("getRDA",
+setMethod("getJointRDA",
     signature = c(x = "ANY"),
     function(x, ...) {
         .check_input(x, "list", length = 2L)
@@ -110,5 +110,28 @@ setMethod("getRDA",
 #' @importFrom vegan rda
 .run_rda <- function(x, ...) {
     res <- rda(X = x[[1L]], Y = x[[2L]], ...)
+    class(res) <- c("JointRDA", class(res))
     return(res)
+}
+
+################################### PLOTTING ###################################
+
+#' @rdname getJointRDA
+#' @export
+#' @importFrom ggvegan ordiggplot geom_ordi_axis geom_ordi_point geom_ordi_arrow
+plot.JointRDA <- function(x, show.species = TRUE, show.biplot = TRUE, ...) {
+    .check_input(show.species, "logical scalar")
+    .check_input(show.biplot, "logical scalar")
+
+    p <- ordiggplot(x) +
+        geom_ordi_axis() +
+        geom_ordi_point("sites")
+    if( show.species ){
+        p <- p + geom_ordi_arrow("species", colour = "red")
+    }
+    if( show.biplot ){
+        p <- p + geom_ordi_arrow("biplot", colour = "blue")
+    }
+
+    return(p)
 }

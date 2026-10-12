@@ -16,10 +16,10 @@ setGeneric(
     }
 )
 
-#' @rdname getRDA
+#' @rdname getJointRDA
 #' @export
-setGeneric("getRDA", signature = "x", function(x, ...) {
-    standardGeneric("getRDA")
+setGeneric("getJointRDA", signature = "x", function(x, ...) {
+    standardGeneric("getJointRDA")
 })
 
 #' @rdname getMiRKAT
@@ -32,4 +32,10 @@ setGeneric("getMiRKAT", signature = "x", function(x, ...) {
 #' @export
 setGeneric("getLASSO", signature = "x", function(x, ...) {
     standardGeneric("getLASSO")
+})
+
+#' @rdname getPairwiseAssociation
+#' @export
+setGeneric("getPairwiseAssociation", signature = "x", function(x, ...) {
+    standardGeneric("getPairwiseAssociation")
 })
