@@ -132,7 +132,7 @@ setMethod("getPairwiseAssociation",
         }
         .check_input(col.data, c("NULL", "data.frame"))
 
-        if( !is.null(group.by) ){
+        if (!is.null(group.by)) {
             if (is.null(col.data)) {
                 stop("'col.data' (sample metadata) required when 'group.by' is specified.", call. = FALSE)
             }
@@ -148,7 +148,8 @@ setMethod("getPairwiseAssociation",
         x <- lapply(x, t)
         res <- .calculate_association(
             x = x[[1L]], y = x[[2L]],
-            sample_data = col.data, group.by = group.by, method = method, ...)
+            sample_data = col.data, group.by = group.by, method = method, ...
+        )
         return(res)
     }
 )
@@ -156,12 +157,10 @@ setMethod("getPairwiseAssociation",
 ################################ HELP FUNCTIONS ################################
 
 # Main helper function for calculating correlation in different scenarios.
-.calculate_association <- function(
-        x, y,
-        sample_data = NULL, group.by = NULL,
-        formula = NULL,
-        method = "kendall", ...
-) {
+.calculate_association <- function(x, y,
+                                   sample_data = NULL, group.by = NULL,
+                                   formula = NULL,
+                                   method = "kendall", ...) {
     # If formula specified, validate metadata
     if (!is.null(formula)) {
         .check_input(formula, "formula")
@@ -177,8 +176,9 @@ setMethod("getPairwiseAssociation",
         missing_vars <- setdiff(covariates, colnames(sample_data))
         if (length(missing_vars) > 0L) {
             stop("Covariates not found in 'col.data': '",
-                 paste0(missing_vars, collapse = "', '"), "'",
-                 call. = FALSE)
+                paste0(missing_vars, collapse = "', '"), "'",
+                call. = FALSE
+            )
         }
     }
     # Select association function
@@ -193,7 +193,6 @@ setMethod("getPairwiseAssociation",
 
     # Calculate associations
     if (is.null(group.by)) {
-
         res <- FUN(
             x = x,
             y = y,
@@ -202,7 +201,6 @@ setMethod("getPairwiseAssociation",
             method = method,
             ...
         )
-
     } else {
         # Calculate correlation for each group separately
         strata <- sample_data[[group.by]]
@@ -250,7 +248,6 @@ setMethod("getPairwiseAssociation",
 
 # Calculate simple associaton between two tables
 .association_cor <- function(x, y, method = "kendall", ...) {
-
     res <- cor(
         x,
         y,
@@ -264,7 +261,6 @@ setMethod("getPairwiseAssociation",
 # Correlation on residuals. First we remove the effect of covariates and then
 # calculate the correlation.
 .association_lm <- function(x, y, sample_data, formula, method = "kendall", ...) {
-
     covariates <- attr(terms(formula), "term.labels")
     model_formula <- reformulate(covariates)
 
@@ -323,7 +319,7 @@ setMethod("getPairwiseAssociation",
 #' @export
 plot.PairwiseAssociation <- function(x, sort = TRUE, ...) {
     .check_input(sort, "logical scalar")
-    if( sort ){
+    if (sort) {
         x <- .order_features(x)
     }
     p <- .plot_heatmap(x, ...)
@@ -331,7 +327,6 @@ plot.PairwiseAssociation <- function(x, sort = TRUE, ...) {
 }
 
 .order_features <- function(df) {
-
     # Remove associations with missing/non-finite values
     df <- df[is.finite(df$value), , drop = FALSE]
 
@@ -350,7 +345,6 @@ plot.PairwiseAssociation <- function(x, sort = TRUE, ...) {
 #' @importFrom ggplot2 aes element_rect element_text geom_tile ggplot labs
 #'     scale_fill_gradient2 theme theme_minimal facet_wrap
 .plot_heatmap <- function(df, ...) {
-
     # Create the heatmap
     p <- ggplot(
         df,
@@ -401,7 +395,7 @@ plot.PairwiseAssociation <- function(x, sort = TRUE, ...) {
     # Facet by strata when group-wise associations were calculated
     if ("strata" %in% colnames(df)) {
         p <- p +
-            facet_wrap(~ strata)
+            facet_wrap(~strata)
     }
     return(p)
 }
