@@ -79,10 +79,10 @@ test_that("getMiRKAT matches MiRKAT for list input", {
     result <- getMiRKAT(list(inputs$microbiome, inputs$outcomes), nperm = 9L)
     expected <- mirkat_reference(inputs)
 
-    expect_s3_class(result, "data.frame")
+    expect_s3_class(result, c("MiRKAT", "data.frame"), exact = TRUE)
     expect_identical(rownames(result), rownames(expected))
     expect_identical(colnames(result), colnames(expected))
-    expect_equal(result, expected)
+    expect_equal(as.data.frame(result), expected)
 })
 
 test_that("getMiRKAT preserves results through MultiAssayExperiment and SingleCellExperiment", {
