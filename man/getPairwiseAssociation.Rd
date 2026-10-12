@@ -101,7 +101,7 @@ res <- getPairwiseAssociation(
 )
 
 # Visualize results
-plotPairwiseAssociation(res)
+plot(res)
 
 }
 \seealso{

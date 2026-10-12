@@ -68,7 +68,7 @@
 #' )
 #'
 #' # Visualize results
-#' plotLASSO(res)
+#' plot(res)
 #'
 #' @seealso
 #' \code{\link[glmnet:cv.glmnet]{glmnet::cv.glmnet()}}
@@ -298,7 +298,7 @@ setMethod("getLASSO",
 #' @export
 plot.LASSO <- function(x, sort = TRUE, ...) {
     .check_input(sort, "logical scalar")
-    if( sort ){
+    if (sort) {
         x <- .order_features(x)
     }
     p <- .plot_heatmap(x, ...)
