@@ -27,7 +27,7 @@ make_lasso_mae <- function(inputs) {
     )
 }
 
-test_that("getLASSO returns a named coefficient matrix", {
+test_that("getLASSO returns a LASSO data frame of feature pairs", {
     set.seed(42)
     inputs <- make_lasso_inputs()
 
@@ -38,13 +38,16 @@ test_that("getLASSO returns a named coefficient matrix", {
         nfolds = 3L
     )
 
-    expect_true(is.matrix(result))
-    expect_type(result, "double")
-    expect_equal(ncol(result), nrow(inputs$responses))
-    expect_identical(colnames(result), rownames(inputs$responses))
-    expect_true(all(rownames(result) %in% rownames(inputs$predictors)))
+    expect_s3_class(result, c("LASSO", "data.frame"), exact = TRUE)
+    expect_identical(colnames(result), c("feature1", "feature2", "value"))
+    expect_type(result[["value"]], "double")
+    expect_setequal(
+        unique(as.character(result[["feature2"]])),
+        rownames(inputs$responses)
+    )
+    expect_true(all(result[["feature1"]] %in% rownames(inputs$predictors)))
     expect_gt(nrow(result), 0L)
-    expect_true(any(!is.na(result)))
+    expect_true(any(!is.na(result[["value"]])))
 })
 
 test_that("getLASSO matches cv.glmnet at lambda.1se", {
@@ -82,8 +85,11 @@ test_that("getLASSO matches cv.glmnet at lambda.1se", {
         colSums(is.na(expected)) != nrow(expected),
         drop = FALSE
     ]
+    expected <- as.data.frame(as.table(expected))
+    colnames(expected) <- c("feature1", "feature2", "value")
 
-    expect_equal(result, expected)
+    expect_s3_class(result, "LASSO")
+    expect_equal(as.data.frame(result), expected)
 })
 
 test_that("getLASSO preserves results through a MultiAssayExperiment", {
