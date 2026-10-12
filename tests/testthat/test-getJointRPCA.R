@@ -73,7 +73,12 @@ test_that("getJointRPCA matches mia for the migrated behavior", {
     result <- do.call(getJointRPCA, c(list(x = mae), args))
     reference <- do.call(mia::getJointRPCA, c(list(x = mae), args))
 
-    expect_equal(result, reference)
+    # The stored dist() call differs only by namespace prefix
+    drop_call <- function(x) {
+        attr(attr(x, "distance"), "call") <- NULL
+        x
+    }
+    expect_equal(drop_call(result), drop_call(reference))
 })
 
 test_that("getJointRPCA selects a test set by default", {
