@@ -73,7 +73,7 @@
 #' )
 #'
 #' # Visualize results
-#' plotPairwiseAssociation(res)
+#' plot(res)
 #'
 #' @seealso
 #' \code{\link[getLASSO]{multiomics::getLASSO()}}

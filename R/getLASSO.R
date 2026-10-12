@@ -68,7 +68,7 @@
 #' )
 #'
 #' # Visualize results
-#' plotLASSO(res)
+#' plot(res)
 #'
 #' @seealso
 #' \code{\link[glmnet:cv.glmnet]{glmnet::cv.glmnet()}}
