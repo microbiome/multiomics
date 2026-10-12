@@ -569,8 +569,9 @@
 .retrieve_sample_metadata_from_tse <- function(x, experiments) {
     # Select experiments from TreeSE
     tse_list <- .select_experiments_from_tse(x, experiments)
-    # Get all colDatas
-    dfs <- lapply(tse_list, colData)
+    # Get all colDatas. Unname so that cbind() does not prefix column names
+    # with experiment names.
+    dfs <- lapply(tse_list, colData) |> unname()
     df <- do.call(cbind, dfs)
     df <- df[, !duplicated(colnames(df)), drop = FALSE]
     return(df)
