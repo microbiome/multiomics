@@ -72,12 +72,12 @@ expect_selection_rda_equivalent <- function(actual, expected) {
 test_that("MAE experiment and assay selection preserve requested order", {
     inputs <- make_selection_inputs()
 
-    result <- multiomics::getRDA(
+    result <- multiomics::getJointRDA(
         inputs$mae,
         experiments = c("second", "first"),
         assay.types = c("scaled", "counts")
     )
-    expected <- multiomics::getRDA(
+    expected <- multiomics::getJointRDA(
         list(inputs$responses + 100, inputs$predictors)
     )
 
@@ -87,20 +87,20 @@ test_that("MAE experiment and assay selection preserve requested order", {
 test_that("SCE experiment and assay selection preserve requested order", {
     inputs <- make_selection_inputs()
 
-    named_result <- multiomics::getRDA(
+    named_result <- multiomics::getJointRDA(
         inputs$sce,
         experiments = c("main", "outcomes"),
         assay.types = c("counts", "counts")
     )
-    named_expected <- multiomics::getRDA(
+    named_expected <- multiomics::getJointRDA(
         list(inputs$predictors, inputs$responses)
     )
-    indexed_result <- multiomics::getRDA(
+    indexed_result <- multiomics::getJointRDA(
         inputs$sce,
         experiments = c(1L, 2L),
         assay.types = c("counts", "counts")
     )
-    indexed_expected <- multiomics::getRDA(
+    indexed_expected <- multiomics::getJointRDA(
         list(inputs$responses, inputs$predictors)
     )
 
@@ -111,16 +111,16 @@ test_that("SCE experiment and assay selection preserve requested order", {
 test_that("numeric and character altExp selection preserve results", {
     inputs <- make_selection_inputs()
 
-    expected <- multiomics::getRDA(
+    expected <- multiomics::getJointRDA(
         list(inputs$first_alt, inputs$second_alt)
     )
-    numeric_result <- multiomics::getRDA(
+    numeric_result <- multiomics::getJointRDA(
         inputs$mae,
         experiments = c(1L, 2L),
         assay.types = c("counts", "counts"),
         altexps = c(1L, 1L)
     )
-    character_result <- multiomics::getRDA(
+    character_result <- multiomics::getJointRDA(
         inputs$mae,
         experiments = c(1L, 2L),
         assay.types = c("counts", "counts"),
@@ -135,7 +135,7 @@ test_that("invalid experiment and assay selections are rejected", {
     inputs <- make_selection_inputs()
 
     expect_error(
-        multiomics::getRDA(
+        multiomics::getJointRDA(
             inputs$mae,
             experiments = c("missing", "first"),
             assay.types = c("counts", "counts")
@@ -143,7 +143,7 @@ test_that("invalid experiment and assay selections are rejected", {
         "must specify names or index"
     )
     expect_error(
-        multiomics::getRDA(
+        multiomics::getJointRDA(
             inputs$sce,
             experiments = c(0L, 1L),
             assay.types = c("counts", "counts")
@@ -151,7 +151,7 @@ test_that("invalid experiment and assay selections are rejected", {
         "must specify names or index"
     )
     expect_error(
-        multiomics::getRDA(
+        multiomics::getJointRDA(
             inputs$mae,
             experiments = c("first", "second"),
             assay.types = c("missing", "counts")
