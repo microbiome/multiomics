@@ -159,3 +159,113 @@ test_that("invalid experiment and assay selections are rejected", {
         "Cannot find assay"
     )
 })
+
+test_that("MAE selection keeps only shared samples in matching order", {
+    inputs <- make_selection_inputs()
+    samples <- colnames(inputs$predictors)
+    shared <- samples[-1L]
+
+    mae <- MultiAssayExperiment::MultiAssayExperiment(
+        experiments = MultiAssayExperiment::ExperimentList(
+            first = SingleCellExperiment::SingleCellExperiment(
+                assays = list(counts = inputs$predictors)
+            ),
+            second = SingleCellExperiment::SingleCellExperiment(
+                assays = list(counts = inputs$responses[, rev(shared)])
+            )
+        )
+    )
+
+    result <- multiomics::getJointRDA(
+        mae,
+        experiments = c("first", "second"),
+        assay.types = c("counts", "counts")
+    )
+    expected <- multiomics::getJointRDA(
+        list(inputs$predictors[, shared], inputs$responses[, shared])
+    )
+
+    expect_selection_rda_equivalent(result, expected)
+})
+
+test_that("NA in altexps keeps the main experiment", {
+    inputs <- make_selection_inputs()
+
+    result <- multiomics::getJointRDA(
+        inputs$mae,
+        experiments = c(1L, 2L),
+        assay.types = c("counts", "counts"),
+        altexps = c("alternative", NA)
+    )
+    expected <- multiomics::getJointRDA(
+        list(inputs$first_alt, inputs$responses)
+    )
+
+    expect_selection_rda_equivalent(result, expected)
+})
+
+test_that("invalid altExp selections are rejected", {
+    inputs <- make_selection_inputs()
+    se_mae <- MultiAssayExperiment::MultiAssayExperiment(
+        experiments = MultiAssayExperiment::ExperimentList(
+            first = SummarizedExperiment::SummarizedExperiment(
+                assays = list(counts = inputs$predictors)
+            ),
+            second = SummarizedExperiment::SummarizedExperiment(
+                assays = list(counts = inputs$responses)
+            )
+        )
+    )
+
+    expect_error(
+        multiomics::getJointRDA(
+            inputs$mae,
+            experiments = c(1L, 2L),
+            assay.types = c("counts", "counts"),
+            altexps = c("missing", "alternative")
+        ),
+        "does not specify altExp"
+    )
+    expect_error(
+        multiomics::getJointRDA(
+            se_mae,
+            experiments = c(1L, 2L),
+            assay.types = c("counts", "counts"),
+            altexps = c(1L, 1L)
+        ),
+        "must be SingleCellExperiment"
+    )
+})
+
+test_that("MAE sample metadata is used for group.by", {
+    inputs <- make_selection_inputs()
+    col_data <- data.frame(
+        group = rep(c("x", "y"), 4L),
+        row.names = colnames(inputs$predictors)
+    )
+    mae <- MultiAssayExperiment::MultiAssayExperiment(
+        experiments = MultiAssayExperiment::ExperimentList(
+            first = SingleCellExperiment::SingleCellExperiment(
+                assays = list(counts = inputs$predictors)
+            ),
+            second = SingleCellExperiment::SingleCellExperiment(
+                assays = list(counts = inputs$responses)
+            )
+        ),
+        colData = S4Vectors::DataFrame(col_data)
+    )
+
+    result <- multiomics::getPairwiseAssociation(
+        mae,
+        experiments = c(1L, 2L),
+        assay.types = c("counts", "counts"),
+        group.by = "group"
+    )
+    expected <- multiomics::getPairwiseAssociation(
+        list(inputs$predictors, inputs$responses),
+        col.data = col_data,
+        group.by = "group"
+    )
+
+    expect_equal(result, expected)
+})
