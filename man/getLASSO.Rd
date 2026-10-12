@@ -84,7 +84,7 @@ res <- getLASSO(
 )
 
 # Visualize results
-plotLASSO(res)
+plot(res)
 
 }
 \references{
