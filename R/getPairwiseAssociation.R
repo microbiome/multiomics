@@ -130,6 +130,10 @@ setMethod("getPairwiseAssociation",
         if (!all(samples_1 %in% samples_2) || !all(samples_2 %in% samples_1)) {
             stop("Sample names (columns) must match between matrices.", call. = FALSE)
         }
+        # Order samples of the second matrix as in the first
+        if (!is.null(samples_1)) {
+            x[[2L]] <- x[[2L]][, samples_1, drop = FALSE]
+        }
         .check_input(col.data, c("NULL", "data.frame"))
 
         if( !is.null(group.by) ){
