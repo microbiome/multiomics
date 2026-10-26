@@ -6,6 +6,12 @@ setGeneric("getMantel", signature = "x", function(x, ...) {
     standardGeneric("getMantel")
 })
 
+#' @rdname getProcrustes
+#' @export
+setGeneric("getProcrustes", signature = "x", function(x, ...) {
+    standardGeneric("getProcrustes")
+})
+
 #' @rdname getJointRDA
 #' @export
 setGeneric("getJointRDA", signature = "x", function(x, ...) {
