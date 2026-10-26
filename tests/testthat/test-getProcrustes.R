@@ -75,7 +75,8 @@ test_that("getProcrustes checks input", {
     inputs <- make_procrustes_inputs()
     expect_error(getProcrustes(list(inputs$first)))
     expect_error(
-        getProcrustes(list(inputs$first, as.data.frame(inputs$second))))
+        getProcrustes(list(inputs$first, as.data.frame(inputs$second)))
+    )
     second <- inputs$second
     colnames(second)[[1L]] <- "other"
     expect_error(getProcrustes(list(inputs$first, second)))
